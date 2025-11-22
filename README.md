@@ -1,92 +1,101 @@
 # 🔐 RSA Single Prime Challenge
 
-## 📋 Informations
+## 📋 Information
 
-| Catégorie | Difficulté | Flag Format | Vulnérabilité |
+| Category | Difficulty | Flag Format | Vulnerability |
 | :--- | :--- | :--- | :--- |
-| **Cryptographie** | 🟡 Medium | `IGTF{...}` | Single Prime & Even Exponent |
+| **Cryptography** | 🟡 Medium | `IGTF{...}` | Single Prime & Even Exponent |
 
-## ☎️ L'énnocé
-Mon professeur de crypto a dit qu'il fallait deux nombres premiers pour RSA. J'ai décidé d'économiser de l'énergie et d'en utiliser qu'un seul, mais très grand, donc très costaud ! J'ai aussi doublé la sécurité de l'exposant classique en passant à 32.
+## ☎️ Problem Statement
 
-Pouvez-vous retrouver mon secret ?
+My crypto professor said that RSA requires two prime numbers. I decided to save energy and use just one, but a very large one, so it's super tough! I also doubled the security of the classic exponent by bumping it up to 32.
 
-Fichiers fournis : `challenge_data.txt` (contenant le N, e, et ct que tu as généré ci-dessus).
+Can you recover my secret?
 
-## 📝 Le Challenge
+**Provided files:** `challenge_data.txt` (containing $N$, $e$, and $ct$).
 
-L'auteur de ce challenge a voulu "optimiser" le chiffrement RSA en commettant deux erreurs d'implémentation critiques :
-1.  Il n'utilise qu'un **seul nombre premier** $N$ au lieu de deux ($N = p$ au lieu de $N = p \times q$).
-2.  Il utilise un **exposant pair** $e=32$ (soit $2^5$).
+## 📝 The Challenge
 
-**Objectif :** Retrouver le message original (le flag) sans connaître la clé privée (qui n'existe mathématiquement pas dans cette configuration).
+The author of this challenge wanted to "optimize" RSA encryption by committing two critical implementation errors:
+1.  Using a **single prime number** $N$ instead of two ($N = p$ instead of $N = p \times q$).
+2.  Using an **even exponent** $e=32$ (which is $2^5$).
 
-### 📂 Fichier fournis
-* `challenge_data.txt` : Les valeurs brutes de $N$, $e$ et $ct$.
+**Goal:** Recover the original message (the flag) without knowing the private key (which mathematically doesn't exist in this configuration).
+
+### 📂 Provided Files
+* `solve.py`: The complete resolution script.
+* `challenge_data.txt`: The raw values of $N$, $e$, and $ct$.
 
 ---
 
-## 🛠️ Analyse et Solution Théorique
+## 🛠️ Analysis and Theoretical Solution
 
-Pour comprendre comment casser ce chiffrement, il faut analyser pourquoi les règles standards de RSA ne s'appliquent pas.
+To understand how to break this encryption, we must analyze why standard RSA rules do not apply.
 
-### 1. Le "Terrain de Jeu" : Pourquoi $N$ Premier change tout ?
+### 1. The "Playground": Why Prime $N$ Changes Everything
 
-> **L'Analogie de la Pièce Cachée** 🏠
-> * **RSA Normal ($N = p \times q$) :** La "pièce" est un labyrinthe complexe construit en mélangeant deux plans d'architecte ($p$ et $q$). Si vous n'avez pas les plans (la factorisation), vous êtes perdu.
-> * **Ce Challenge ($N = p$) :** L'auteur a oublié de mélanger. La "pièce" est un grand espace ouvert (un corps fini $\mathbb{Z}_p$).
+> **The Hidden Room Analogy** 🏠
+> * **Normal RSA ($N = p \times q$):** The "room" is a complex labyrinth built by mixing two architectural blueprints ($p$ and $q$). If you don't have the blueprints (factorization), you are lost.
+> * **This Challenge ($N = p$):** The author forgot to mix them. The "room" is a large open space (a finite field $\mathbb{Z}_p$).
 
-**Conséquence mathématique :**
-Dans cet espace ouvert, les règles sont simples. Calculer des racines carrées (ce qui est très difficile dans RSA normal sans la clé) devient possible et efficace grâce à des algorithmes comme **Tonelli-Shanks**.
+**Mathematical Consequence:**
+In this open space, the rules are simple. Computing square roots (which is very difficult in normal RSA without the key) becomes possible and efficient thanks to algorithms like **Tonelli-Shanks**.
 
-### 2. Le Problème de la "Porte à Tambour" ($e=32$)
+### 2. The "Revolving Door" Problem ($e=32$)
 
-Pourquoi ne peut-on pas simplement calculer l'inverse de la clé ($d$) comme d'habitude ?
+Why can't we simply calculate the inverse key ($d$) as usual?
 
-> **L'Analogie de la Porte** 🚪
-> * **Chiffrer ($e$) :** Vous poussez une porte à tambour de $X$ tours.
-> * **Déchiffrer ($d$) :** Vous pousses encore pour revenir exactement au point de départ.
-> * **Le Bug :** Ici, la taille du tour est paire (car $N-1$ est pair) et votre poussée ($e=32$) est paire. C'est comme si la porte avait fait des tours complets sur elle-même. En la regardant fermée, impossible de savoir si elle a fait 2, 4 ou 32 tours. L'information s'est superposée.
+> **The Door Analogy** 🚪
+> * **Encrypt ($e$):** You push a revolving door $X$ times.
+> * **Decrypt ($d$):** You push it more to get back exactly to the starting point.
+> * **The Bug:** Here, the rotation size is even (since $N-1$ is even) and your push ($e=32$) is even. It's as if the door made full rotations. Looking at the closed door, it's impossible to know if it made 2, 4, or 32 turns. The information has overlapped.
 
-**Conséquence :** Il n'y a pas de "bouton retour" unique. La fonction n'est pas bijective.
+**Consequence:** There is no unique "back button". The function is not bijective.
 
-### 3. La Résolution : Remonter l'Arbre
+### 3. The Resolution: Climbing the Tree
 
-Puisque nous ne pouvons pas inverser le calcul d'un coup, nous devons le faire pas à pas.
-L'équation du chiffrement est :
+Since we cannot reverse the calculation all at once, we must do it step by step.
+The encryption equation is:
 $$C \equiv M^{32} \pmod N$$
 
-Comme $32 = 2^5$, cela revient à dire que le message a été mis au carré **5 fois de suite**.
-Pour retrouver le message, nous devons extraire la racine carrée 5 fois de suite.
+Since $32 = 2^5$, this means the message was squared **5 times in a row**.
+To recover the message, we must extract the square root 5 times in a row.
 
-**Le piège des racines :**
-En maths modulaires, une racine carrée possède souvent **deux solutions** ($x$ et $-x$). Cela crée un arbre de décision :
 
-* **Départ :** 1 message chiffré.
-* **Étape 1 ($\sqrt{}$) :** 2 possibilités.
-* **Étape 2 ($\sqrt{}$) :** 4 possibilités.
+
+[Image of binary tree diagram]
+
+
+**The Root Trap:**
+In modular arithmetic, a square root often has **two solutions** ($x$ and $-x$). This creates a decision tree:
+
+* **Start:** 1 ciphertext.
+* **Step 1 ($\sqrt{}$):** 2 possibilities.
+* **Step 2 ($\sqrt{}$):** 4 possibilities.
 * ...
-* **Étape 5 ($\sqrt{}$) :** Jusqu'à 32 messages potentiels.
+* **Step 5 ($\sqrt{}$):** Up to 32 potential messages.
 
-L'un de ces 32 messages est le flag `IGTF{...}`. Les autres ne sont que du bruit mathématique.
+One of these 32 messages is the flag `IGTF{...}`. The others are just mathematical noise.
 
 ---
 
-## 💻 Utilisation du Script
+## 💻 Script Usage
 
-Le script `solve.py` automatise cette attaque en utilisant l'algorithme de Tonelli-Shanks.
+The `solve.py` script automates this attack using the Tonelli-Shanks algorithm.
 
-### Fonctionnement du script
-1.  Il charge le chiffré $ct$.
-2.  Il boucle 5 fois pour extraire les racines carrées successives.
-3.  Il gère l'arbre de décision (les multiples candidats générés à chaque étape).
-4.  Il convertit les résultats en texte et cherche le format de flag `IGTF{`.
+### How the script works
+1.  It loads the ciphertext $ct$.
+2.  It loops 5 times to extract successive square roots.
+3.  It manages the decision tree (multiple candidates generated at each step).
+4.  It converts the results to text and searches for the flag format `IGTF{`.
 
-### Pré-requis
-Aucune installation complexe n'est requise, le script utilise Python natif (3.x).
+More details can be found in the `solve` directory on GitHub.
 
-### Commande
-Ouvrez un terminal dans le dossier et lancez :
+### Prerequisites
+No complex installation is required; the script uses native Python (3.x).
+
+### Command
+Open a terminal in the folder and run:
 
 ```bash
 python solve.py
