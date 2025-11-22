@@ -1,4 +1,4 @@
-# 🔐 RSA Single Prime Challenge
+# 🔐 Lonely Prime - RSA Challenge
 
 > **Author:** Created by **Nicolas HOULES** for the **Int Guardia CTF** in **Guardia Cyber Security School**.  
 ![Script Execution](Int_Guardia_CTF_Logo.png)
